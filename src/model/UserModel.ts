@@ -1,24 +1,35 @@
 import db from '../config/database';
-
+import CryptPassword from '../util/CryptPassword';
+import { CreateUserError } from '../types/Errors';
 class UserModel {
-  constructor() {}
   create(
     name: string,
     email: string,
     password: string,
-    callback: (error: Error) => void,
+    callback: (error: CreateUserError | null) => void,
   ): void {
-    const query = `INSERT INTO users (name, email, password) VALUES (?, ?, ?)`;
-    db.run(query, [name, email, password], (error) => {
-      if (error) {
-        callback(error);
-        return;
-      }
-    });
+    const query = `INSERT INTO users (name, email, passwordHash, passwordSalt) VALUES (?, ?, ?, ?)`;
+    const { passwordHash, passwordSalt } = CryptPassword.hash(password);
+    db.run(
+      query,
+      [name, email, passwordHash, passwordSalt],
+      (error: CreateUserError) => {
+        if (error) {
+          callback(error);
+          return;
+        } else {
+          callback(null);
+        }
+      },
+    );
   }
-  update(password: string, id: number, callback: (error: Error) => void) {
+  update(
+    password: string,
+    id: number,
+    callback: (error: CreateUserError) => void,
+  ) {
     const query = `UPDATE users SET password = ? WERE id = ?`;
-    db.run(query, [password, id], (error) => {
+    db.run(query, [password, id], (error: CreateUserError) => {
       if (error) {
         callback(error);
         return;
